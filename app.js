@@ -1,3 +1,4 @@
+// Require Modules
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose= require("mongoose");
@@ -7,74 +8,119 @@ const app= express();
 const port= 3000;
 
 app.set("view engine", "ejs");
-
 app.use(bodyParser.urlencoded({extended:true}));
 
 // Other static files used are placed in the public folder
 app.use(express.static("public"));
 
+// Connect to MongoDB
 mongoose.connect("mongodb+srv://"+ process.env.MONGODB_KEY +".l5lqa.mongodb.net/todolistDB?retryWrites=true&w=majority", {useNewUrlParser:true, useUnifiedTopology:true})
 
+//Date for default list
 var day= new Date();
-var options = { 
+var options = {
   weekday: "long",
   day: "numeric",
   month: "long",
 }
 var currentDay= day.toLocaleDateString("en-US", options)
 
+// Schema for item collection
 const itemSchema= {
   name: {type: String, required: true},
   status: String,
 }
-
+// Item collection
 const Item= mongoose.model("Item", itemSchema);
 
-
+// Schema for custom lists
 const customListSchema= {
   name:{type:String, required:true},
   items: [itemSchema]
 }
-
+// Custom list collections
 const customList= mongoose.model("customlist", customListSchema);
 
+
+// Get routes
+
+// Home route
 app.get("/", function(req, res){
 
+  // Read all documents in Item collection
   Item.find({}, function(err, itemsFound)
   {
     if (err) {
       console.log(err);
     }else
-    {res.render("to-do-list", {listTitle: currentDay, newItems: itemsFound});}
+    {
+      // Read every document in custom list collection
+      customList.find({}, function(err, foundList){
+        if(!err){
+          if(foundList){
+            //Render file
+            res.render("to-do-list", {listTitle: currentDay,  newItems: itemsFound, selectedList: foundList});
+          }
+        }
+      });
+    }
   });
 
 });
 
+// Custom List route
 app.get("/:customList", function(req, res){
+  // Assign route parameter to customListName
   const customListName= _.capitalize(req.params.customList);
-
+  // Check if you can find at least one list with that name
   customList.findOne({name: customListName}, function(err, foundList){
     if(!err){
+      //If you found one, read all documents in the customList and render it
       if(foundList){
-        console.log("Exists");
-        res.render("to-do-list", {listTitle: foundList.name, newItems: foundList.items});
+        customList.find({}, function(err, list){
+          if(!err){
+            if(foundList){
+              console.log(list);
+              res.render("to-do-list", {listTitle: foundList.name,  newItems: foundList.items, selectedList: list});
+            }
+          }
+        });
+
       }
     }
   });
 });
 
-app.post("/customList", function(req, res){
-  console.log(req.body.newlistTitle);
-  const customListName= _.capitalize(req.body.newlistTitle);
+// Post routes
 
+// Add new list or choose an existing list
+app.post("/customList", function(req, res){
+  // Save title of new list
+  var customListName= req.body.newlistTitle;
+
+  //If title is undefined save title of existing list selected
+  if (customListName == undefined) {
+    customListName= _.capitalize(req.body.createdList);
+  } else {
+    customListName= _.capitalize(customListName);
+  }
+
+  // Search for a document with the name of the list title
   customList.findOne({name: customListName}, function(err, foundList){
     if(!err){
+      // If one was found, read all documents in the custom list collection and render it
       if(foundList){
-        console.log("Exists");
-        res.render("to-do-list", {listTitle: foundList.name, newItems: foundList.items});
+        customList.find({}, function(err, list){
+          if(!err){
+            if(foundList){
+              console.log(list);
+              res.render("to-do-list", {listTitle: foundList.name,  newItems: foundList.items, selectedList: list});
+            }
+          }
+        });
       }
+      // Else create a new custom list document and redirect to custom list get route
       else{
-        console.log("Does not exist");
         const list= new customList({
           name: customListName,
           items: []
@@ -84,8 +130,6 @@ app.post("/customList", function(req, res){
           if (err) {
             console.log(err);
           } else {
-            console.log("Saved successfully");
-            console.log(doc);
             res.redirect("/"+customListName);
           }
         });
@@ -94,19 +138,25 @@ app.post("/customList", function(req, res){
   });
 });
 
+// Post route for adding a new item to a list
 app.post("/", function(req, res){
 
+  // Take item name and list title
   const itemName = req.body.addItem;
   const listName = req.body.button;
 
+  // Create new item document
   const item = new Item({
     name: _.capitalize(itemName)
   });
 
+  // If item was created in default list save item and direct to home get route
   if (listName === currentDay){
     item.save();
     res.redirect("/");
-  } else {
+  }
+  // Otherwise search for a document with the list name save items and redirect to custom list home route
+  else {
     customList.findOne({name: listName}, function(err, foundList){
       if (err) {
         console.log(err);
@@ -119,19 +169,21 @@ app.post("/", function(req, res){
   }
 });
 
-
+// Delete post route
 app.post("/delete", function(req, res){
   const checkedItemId = req.body.checkbox;
   const listName = req.body.listName;
 
+  // Delete from defaut list
   if (listName === currentDay) {
     Item.findByIdAndRemove(checkedItemId, function(err){
       if (!err) {
-        console.log("Successfully deleted checked item.");
         res.redirect("/");
       }
     });
-  } else {
+  }
+  // Delete from custom List
+  else {
     customList.findOneAndUpdate({name: listName}, {$pull: {items: {_id: checkedItemId}}}, function(err, foundList){
       if (!err){
         res.redirect("/" + listName);
@@ -141,7 +193,7 @@ app.post("/delete", function(req, res){
 
 });
 
-
+// Listen route
 app.listen(process.env.PORT || port, function(){
   console.log("Server running on port", port);
 })
