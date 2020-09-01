@@ -80,7 +80,7 @@ app.get("/:customList", function(req, res){
         customList.find({}, function(err, list){
           if(!err){
             if(foundList){
-              console.log(list);
+              // console.log(list);
               res.render("to-do-list", {listTitle: foundList.name,  newItems: foundList.items, selectedList: list});
             }
           }
@@ -113,7 +113,7 @@ app.post("/customList", function(req, res){
         customList.find({}, function(err, list){
           if(!err){
             if(foundList){
-              console.log(list);
+              // console.log(list);
               res.render("to-do-list", {listTitle: foundList.name,  newItems: foundList.items, selectedList: list});
             }
           }
@@ -171,7 +171,7 @@ app.post("/", function(req, res){
 
 // Delete post route
 app.post("/delete", function(req, res){
-  const checkedItemId = req.body.checkbox;
+  const checkedItemId = req.body.delete;
   const listName = req.body.listName;
 
   // Delete from defaut list

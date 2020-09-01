@@ -13,15 +13,15 @@
         <%  if (list.name.length > 0){ %>
           <form action="/delete" method="POST">
             <div class="item">
-              <input type="checkbox" onchange="this.form.submit()" name="checkbox" value="<%=list._id %>">
-              <p> <%= list.name %></p>
+              <p class="listItem"> <%= list.name %></p>
+              <button onclick="this.form.submit()" name="delete" value="<%=list._id %>" class="material-icons">delete</button>
             </div>
             <input type="hidden" name="listName" value="<%= listTitle %>"></input>
           </form>
 
         <% } %>
       <% }) %>
-
+    
     <!-- Add a new item -->
     <form action="/" method="post" class="item">
       <label for="add-item" class="sr-only">Add new item</label>
