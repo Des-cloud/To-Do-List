@@ -61,6 +61,8 @@ app.get("/", function(req, res){
             //Render file
             res.render("to-do-list", {listTitle: currentDay,  newItems: itemsFound, selectedList: foundList});
           }
+        }else{
+          console.log(err)
         }
       });
     }
@@ -83,10 +85,14 @@ app.get("/:customList", function(req, res){
               // console.log(list);
               res.render("to-do-list", {listTitle: foundList.name,  newItems: foundList.items, selectedList: list});
             }
+          }else{
+            console.log(err)
           }
         });
 
       }
+    }else{
+      console.log(err)
     }
   });
 });
@@ -116,6 +122,8 @@ app.post("/customList", function(req, res){
               // console.log(list);
               res.render("to-do-list", {listTitle: foundList.name,  newItems: foundList.items, selectedList: list});
             }
+          }else{
+            console.log(err);
           }
         });
       }
@@ -134,6 +142,8 @@ app.post("/customList", function(req, res){
           }
         });
       }
+    }else{
+      console.log(err);
     }
   });
 });
@@ -179,6 +189,8 @@ app.post("/delete", function(req, res){
     Item.findByIdAndRemove(checkedItemId, function(err){
       if (!err) {
         res.redirect("/");
+      }else{
+        console.log(err);
       }
     });
   }
@@ -187,6 +199,8 @@ app.post("/delete", function(req, res){
     customList.findOneAndUpdate({name: listName}, {$pull: {items: {_id: checkedItemId}}}, function(err, foundList){
       if (!err){
         res.redirect("/" + listName);
+      }else{
+        console.log(err);
       }
     });
   }
